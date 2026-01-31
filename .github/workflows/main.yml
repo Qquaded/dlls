@@ -1,0 +1,42 @@
+name: Build Release with GTK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Install MSYS2
+      uses: msys2/setup-msys2@v3
+      with:
+        update: true
+        install: >
+          mingw-w64-ucrt-x86_64-gtk4
+          mingw-w64-ucrt-x86_64-toolchain
+          mingw-w64-ucrt-x86_64-python-gobject
+
+    - name: Setup PATH for MSYS2 mingw64
+      run: echo "C:\msys64\ucrt64\bin" >> $Env:GITHUB_PATH
+
+    - name: Copy GTK DLLs to release folder
+      run: |
+        mkdir release
+        xcopy C:\msys64\ucrt64\bin release\bin /E /Y
+      shell: powershell
+
+    - name: Copy your engine files
+      run: xcopy my_engine\* release\ /E /Y
+      shell: powershell
+
+    - name: Create GitHub release
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: release
+        tag: ${{ github.ref_name }}
