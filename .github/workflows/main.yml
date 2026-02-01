@@ -16,26 +16,64 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
-    - name: Download and extract GTK4 package
+    - name: Download and extract GTK4 with dependencies
       run: |
-        Write-Host "Downloading GTK4 package..."
-        $url = "https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-gtk4-4.20.3-1-any.pkg.tar.zst"
-        Invoke-WebRequest -Uri $url -OutFile "gtk4.pkg.tar.zst"
+        $packages = @(
+          "mingw-w64-ucrt-x86_64-gtk4-4.20.3-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-glib2-2.86.3-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-cairo-1.18.4-4-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-pango-1.56.1-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-gdk-pixbuf2-2.44.5-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-libpng-1.6.46-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-libjpeg-turbo-3.1.0-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-freetype-2.14.1-2-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-fontconfig-2.17.1-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-harfbuzz-10.2.0-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-graphene-1.10.8-3-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-gcc-libs-15.2.0-11-any.pkg.tar.zst"
+        )
         
-        Write-Host "Extracting package..."
-        # Extract using tar (Windows 10+ has tar built-in)
-        tar -xf gtk4.pkg.tar.zst
+        New-Item -ItemType Directory -Force -Path "extracted"
         
-        Write-Host "Looking for DLLs..."
-        $dlls = Get-ChildItem -Path "ucrt64\bin" -Filter "*.dll" -File
-        Write-Host "Found $($dlls.Count) DLL files"
+        foreach ($pkg in $packages) {
+          Write-Host "Downloading $pkg..."
+          $url = "https://repo.msys2.org/mingw/ucrt64/$pkg"
+          try {
+            Invoke-WebRequest -Uri $url -OutFile $pkg
+            Write-Host "Extracting $pkg..."
+            tar -xf $pkg -C extracted
+            Remove-Item $pkg
+          } catch {
+            Write-Host "Warning: Could not download $pkg - $($_.Exception.Message)"
+          }
+        }
         
-        Write-Host "Creating zip..."
-        Compress-Archive -Path "ucrt64\bin\*" -DestinationPath "gtk-dlls.zip" -Force
+        Write-Host "`nLooking for all DLLs..."
+        $dlls = Get-ChildItem -Path "extracted" -Filter "*.dll" -Recurse -File
+        Write-Host "Found $($dlls.Count) DLL files total"
+        
+        Write-Host "`nCollecting DLLs..."
+        New-Item -ItemType Directory -Force -Path "gtk-dlls"
+        foreach ($dll in $dlls) {
+          Copy-Item $dll.FullName -Destination "gtk-dlls\" -Force
+        }
+        
+        $collected = Get-ChildItem -Path "gtk-dlls" -Filter "*.dll" -File
+        Write-Host "Collected $($collected.Count) unique DLLs"
+        
+        Write-Host "`nCreating zip..."
+        Compress-Archive -Path "gtk-dlls\*" -DestinationPath "gtk-dlls.zip" -Force
         
         $zipSize = (Get-Item "gtk-dlls.zip").Length / 1MB
-        Write-Host "Zip file created: $zipSize MB"
+        Write-Host "Zip file created: $([math]::Round($zipSize, 2)) MB"
       shell: powershell
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: gtk-dlls
+        path: gtk-dlls.zip
+        retention-days: 90
     
     - name: Create GitHub release
       uses: ncipollo/release-action@v1
