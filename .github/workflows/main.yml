@@ -2,15 +2,17 @@ name: Build Release with GTK
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'  # Runs every Sunday at midnight UTC
 
 jobs:
   build:
     runs-on: windows-latest
-
+    
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
-
+    
     - name: Install MSYS2
       uses: msys2/setup-msys2@v2
       with:
@@ -22,20 +24,18 @@ jobs:
 
     - name: Setup PATH for MSYS2 mingw64
       run: echo "C:\msys64\ucrt64\bin" >> $Env:GITHUB_PATH
-
+    
     - name: Copy GTK DLLs to release folder
       run: |
         mkdir release
         mkdir release\bin
         xcopy C:\msys64\ucrt64\bin\* release\bin\ /E /Y /I
       shell: powershell
-
-    - name: Copy your engine files
-      run: xcopy my_engine\* release\ /E /Y
-      shell: powershell
-
+    
     - name: Create GitHub release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: release
-        tag: ${{ github.ref_name }}
+        artifacts: release/**/*
+        tag: gtk-dlls-${{ github.run_number }}
+        name: GTK DLLs Release ${{ github.run_number }}
+        allowUpdates: true
