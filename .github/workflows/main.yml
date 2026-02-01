@@ -25,18 +25,32 @@ jobs:
           mingw-w64-ucrt-x86_64-toolchain
           mingw-w64-ucrt-x86_64-python-gobject
 
-    - name: Create ZIP of ucrt64/bin
+    - name: Find and collect all DLLs
       run: |
-        echo "Listing files in C:\msys64\ucrt64\bin:"
-        dir C:\msys64\ucrt64\bin | more
-        echo "Changing to bin directory..."
-        cd C:\msys64\ucrt64\bin
-        echo "Creating zip file..."
-        7z a -tzip D:\a\dlls\dlls\gtk-dlls.zip *
-        cd D:\a\dlls\dlls
-        echo "Checking zip file:"
-        dir gtk-dlls.zip
-      shell: cmd
+        echo "Searching for all DLL files in ucrt64..."
+        New-Item -ItemType Directory -Force -Path "collected-dlls"
+        
+        $dllFiles = Get-ChildItem -Path "C:\msys64\ucrt64" -Filter "*.dll" -Recurse -File
+        
+        Write-Host "Found $($dllFiles.Count) DLL files"
+        Write-Host "First 20 DLLs found:"
+        $dllFiles | Select-Object -First 20 | ForEach-Object { Write-Host $_.FullName }
+        
+        Write-Host "`nCopying DLLs to collected-dlls folder..."
+        foreach ($dll in $dllFiles) {
+            Copy-Item -Path $dll.FullName -Destination "collected-dlls\" -Force
+        }
+        
+        Write-Host "`nTotal files collected:"
+        (Get-ChildItem "collected-dlls" | Measure-Object).Count
+        
+        Write-Host "`nCreating zip file..."
+        Compress-Archive -Path "collected-dlls\*" -DestinationPath "gtk-dlls.zip" -Force
+        
+        Write-Host "`nZip file size:"
+        $zipSize = (Get-Item "gtk-dlls.zip").Length / 1MB
+        Write-Host "$zipSize MB"
+      shell: powershell
     
     - name: Create GitHub release
       uses: ncipollo/release-action@v1
