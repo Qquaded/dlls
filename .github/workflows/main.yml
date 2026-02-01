@@ -28,16 +28,25 @@ jobs:
     - name: Setup PATH for MSYS2 mingw64
       run: echo "C:\msys64\ucrt64\bin" >> $Env:GITHUB_PATH
     
+    - name: List MSYS2 bin directory
+      run: |
+        Write-Host "Checking MSYS2 ucrt64 bin directory:"
+        Get-ChildItem C:\msys64\ucrt64\bin | Select-Object -First 20
+      shell: powershell
+    
     - name: Copy GTK DLLs to release folder
       run: |
-        mkdir release
-        mkdir release\bin
-        xcopy C:\msys64\ucrt64\bin\* release\bin\ /E /Y /I
+        New-Item -ItemType Directory -Force -Path release\bin
+        Copy-Item -Path "C:\msys64\ucrt64\bin\*" -Destination "release\bin\" -Recurse -Force
+        Write-Host "Files copied:"
+        Get-ChildItem release\bin | Measure-Object | Select-Object -ExpandProperty Count
       shell: powershell
     
     - name: Create ZIP archive
       run: |
-        Compress-Archive -Path release\* -DestinationPath gtk-dlls.zip
+        Compress-Archive -Path release\* -DestinationPath gtk-dlls.zip -Force
+        Write-Host "ZIP file created:"
+        Get-Item gtk-dlls.zip
       shell: powershell
     
     - name: Create GitHub release
