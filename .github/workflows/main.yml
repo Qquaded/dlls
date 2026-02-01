@@ -30,7 +30,15 @@ jobs:
           "mingw-w64-ucrt-x86_64-fontconfig-2.17.1-1-any.pkg.tar.zst",
           "mingw-w64-ucrt-x86_64-harfbuzz-10.2.0-1-any.pkg.tar.zst",
           "mingw-w64-ucrt-x86_64-graphene-1.10.8-3-any.pkg.tar.zst",
-          "mingw-w64-ucrt-x86_64-gcc-libs-15.2.0-11-any.pkg.tar.zst"
+          "mingw-w64-ucrt-x86_64-gcc-libs-15.2.0-11-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-libepoxy-1.5.10-2-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-fribidi-1.0.16-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-gstreamer-1.24.11-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-gst-plugins-base-1.24.11-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-gst-plugins-bad-libs-1.24.11-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-gettext-runtime-0.23.1-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-librsvg-2.60.4-1-any.pkg.tar.zst",
+          "mingw-w64-ucrt-x86_64-libtiff-4.8.0-1-any.pkg.tar.zst"
         )
         
         New-Item -ItemType Directory -Force -Path "extracted"
@@ -69,7 +77,7 @@ jobs:
       shell: powershell
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: gtk-dlls
         path: gtk-dlls.zip
