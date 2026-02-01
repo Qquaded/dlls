@@ -27,11 +27,9 @@ jobs:
 
     - name: Create ZIP of ucrt64/bin
       run: |
-        Compress-Archive -Path "C:\msys64\ucrt64\bin\*" -DestinationPath gtk-dlls.zip -Force
-        Write-Host "ZIP created with size:"
-        (Get-Item gtk-dlls.zip).Length / 1MB
-        Write-Host "MB"
-      shell: powershell
+        7z a -tzip gtk-dlls.zip "C:\msys64\ucrt64\bin\*"
+        dir gtk-dlls.zip
+      shell: cmd
     
     - name: Create GitHub release
       uses: ncipollo/release-action@v1
