@@ -15,41 +15,26 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
-    
-    - name: Install MSYS2
-      uses: msys2/setup-msys2@v2
-      with:
-        update: true
-        install: >
-          mingw-w64-ucrt-x86_64-gtk4
-          mingw-w64-ucrt-x86_64-toolchain
-          mingw-w64-ucrt-x86_64-python-gobject
 
-    - name: Find and collect all DLLs
+    - name: Download and extract GTK4 package
       run: |
-        echo "Searching for all DLL files in ucrt64..."
-        New-Item -ItemType Directory -Force -Path "collected-dlls"
+        Write-Host "Downloading GTK4 package..."
+        $url = "https://repo.msys2.org/mingw/ucrt64/mingw-w64-ucrt-x86_64-gtk4-4.20.3-1-any.pkg.tar.zst"
+        Invoke-WebRequest -Uri $url -OutFile "gtk4.pkg.tar.zst"
         
-        $dllFiles = Get-ChildItem -Path "C:\msys64\ucrt64" -Filter "*.dll" -Recurse -File
+        Write-Host "Extracting package..."
+        # Extract using tar (Windows 10+ has tar built-in)
+        tar -xf gtk4.pkg.tar.zst
         
-        Write-Host "Found $($dllFiles.Count) DLL files"
-        Write-Host "First 20 DLLs found:"
-        $dllFiles | Select-Object -First 20 | ForEach-Object { Write-Host $_.FullName }
+        Write-Host "Looking for DLLs..."
+        $dlls = Get-ChildItem -Path "ucrt64\bin" -Filter "*.dll" -File
+        Write-Host "Found $($dlls.Count) DLL files"
         
-        Write-Host "`nCopying DLLs to collected-dlls folder..."
-        foreach ($dll in $dllFiles) {
-            Copy-Item -Path $dll.FullName -Destination "collected-dlls\" -Force
-        }
+        Write-Host "Creating zip..."
+        Compress-Archive -Path "ucrt64\bin\*" -DestinationPath "gtk-dlls.zip" -Force
         
-        Write-Host "`nTotal files collected:"
-        (Get-ChildItem "collected-dlls" | Measure-Object).Count
-        
-        Write-Host "`nCreating zip file..."
-        Compress-Archive -Path "collected-dlls\*" -DestinationPath "gtk-dlls.zip" -Force
-        
-        Write-Host "`nZip file size:"
         $zipSize = (Get-Item "gtk-dlls.zip").Length / 1MB
-        Write-Host "$zipSize MB"
+        Write-Host "Zip file created: $zipSize MB"
       shell: powershell
     
     - name: Create GitHub release
