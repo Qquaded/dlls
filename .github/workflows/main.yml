@@ -26,7 +26,8 @@ jobs:
     - name: Copy GTK DLLs to release folder
       run: |
         mkdir release
-        xcopy C:\msys64\ucrt64\bin release\bin /E /Y
+        mkdir release\bin
+        xcopy C:\msys64\ucrt64\bin\* release\bin\ /E /Y /I
       shell: powershell
 
     - name: Copy your engine files
