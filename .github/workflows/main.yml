@@ -35,10 +35,15 @@ jobs:
         xcopy C:\msys64\ucrt64\bin\* release\bin\ /E /Y /I
       shell: powershell
     
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path release\* -DestinationPath gtk-dlls.zip
+      shell: powershell
+    
     - name: Create GitHub release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: release/**/*
+        artifacts: gtk-dlls.zip
         tag: gtk-dlls-${{ github.run_number }}
         name: GTK DLLs Release ${{ github.run_number }}
         allowUpdates: true
