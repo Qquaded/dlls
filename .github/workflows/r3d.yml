@@ -23,9 +23,10 @@ jobs:
 
     - name: Clone R3D repository
       run: |
-        git clone https://github.com/Bigfoot71/r3d.git r3d
+        rm -rf r3d
+        git clone --progress https://github.com/Bigfoot71/r3d.git r3d
         cd r3d
-        git submodule update --init --recursive
+        git submodule update --init --recursive --depth 1
 
     - name: Create build directory
       run: mkdir r3d/build
