@@ -1,0 +1,54 @@
+name: Build R3D from DLLS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - name: Checkout DLLS repository
+      uses: actions/checkout@v3
+
+    - name: Setup CMake
+      uses: lukka/get-cmake@v4
+
+    - name: Clone R3D repository
+      run: |
+        git clone https://github.com/Bigfoot71/r3d.git r3d
+        cd r3d
+        git submodule update --init --recursive
+
+    - name: Create build directory
+      run: mkdir r3d/build
+
+    - name: Configure CMake
+      run: |
+        cd r3d/build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DR3D_RAYLIB_VENDORED=ON -DR3D_ASSIMP_VENDORED=ON -DR3D_BUILD_EXAMPLES=ON -DR3D_BUILD_DOCS=OFF
+
+    - name: Build project
+      run: |
+        cd r3d/build
+        cmake --build . --config Release
+
+    - name: Package build as zip
+      run: |
+        cd r3d/build
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          powershell Compress-Archive -Path * -DestinationPath ../../r3d-${{ runner.os }}.zip
+        else
+          zip -r ../../r3d-${{ runner.os }}.zip *
+        fi
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: r3d-${{ runner.os }}
+        path: r3d-${{ runner.os }}.zip
