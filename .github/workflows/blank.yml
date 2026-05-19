@@ -1,0 +1,33 @@
+# .github/workflows/build-gns-mac.yml
+name: Build GNS macOS
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ValveSoftware/GameNetworkingSockets
+          
+      - name: Install dependencies
+        run: brew install cmake ninja protobuf libsodium
+
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIB=ON \
+            -DBUILD_STATIC_LIB=OFF \
+            -DUSE_CRYPTO=libsodium \
+            -DProtobuf_USE_STATIC_LIBS=ON \
+            ..
+          ninja
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libGameNetworkingSockets-macos
+          path: build/bin/libGameNetworkingSockets.dylib
