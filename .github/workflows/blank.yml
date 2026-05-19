@@ -1,3 +1,8 @@
+# .github/workflows/build-gns-mac.yml
+name: Build GNS macOS
+
+on: [push, workflow_dispatch]
+
 jobs:
   build-macos:
     strategy:
